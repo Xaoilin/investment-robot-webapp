@@ -98,3 +98,5 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/tr
 
 May have to expose port 3000 https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands
 
+* sudo ufw allow 3000
+* sudo ufw enable
