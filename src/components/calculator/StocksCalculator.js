@@ -8,9 +8,11 @@ import FormControl from "react-bootstrap/FormControl";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Http from "../../js/http/http";
-import {API_URL, LOCALHOST} from "../../js/constants/url_constants";
+import {LOCALHOST} from "../../js/constants/url_constants";
 import Table from "react-bootstrap/Table";
 import NumberFormat from 'react-number-format';
+import Collapse from "react-bootstrap/Collapse";
+import "../../css/calculator/stocks-calculator.css";
 
 export default class StocksCalculator extends React.Component {
 
@@ -20,7 +22,18 @@ export default class StocksCalculator extends React.Component {
         this.state = {
             error: null,
             isLoaded: false,
-            response: []
+            response: {
+                monthlyInvestmentResponses: [],
+                yearlyInvestmentResponses: [
+                    {
+                        stockIncrease: "",
+                        totalProfit: "",
+                        endBalance: "",
+                        totalInvested: ""
+                    }
+                ]
+            },
+            accordion: [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
         };
 
         this.monthlyInvestment = React.createRef();
@@ -28,18 +41,27 @@ export default class StocksCalculator extends React.Component {
         this.endDate = React.createRef();
         this.stock = React.createRef();
         this.initialBalance = React.createRef();
+        this.toggleAccordion = this.toggleAccordion.bind(this);
+    }
+
+    toggleAccordion(tab) {
+        const prevState = this.state.accordion;
+        const state = prevState.map((boolVal, index) => tab === index ? !boolVal : boolVal);
+
+        this.setState({
+            accordion: state,
+        });
     }
 
 
     render() {
-
         const handleSubmit = () => {
             let monthlyInvestment = this.monthlyInvestment.current.value;
             let stock = this.stock.current.value;
             let startDate = this.startDate.current.value;
             let endDate = this.endDate.current.value;
             let initialBalance = this.initialBalance.current.value;
-            Http.getData(`http://${API_URL}:8080/api/v1/investment/calculate?stockType=${stock}&startDate=${startDate}&endDate=${endDate}&monthlyInvestment=${monthlyInvestment}&initialInvestment=${initialBalance}`)
+            Http.getData(`http://${LOCALHOST}:8080/api/v1/investment/yearly/summary?stockType=${stock}&startDate=${startDate}&endDate=${endDate}&monthlyInvestment=${monthlyInvestment}&initialInvestment=${initialBalance}`)
                 .then(data => {
                     this.setState({
                         isLoaded: true,
@@ -47,9 +69,36 @@ export default class StocksCalculator extends React.Component {
                     });
                     console.log(data); // JSON data parsed by `data.json()` call
                     console.log(this.state.response); // JSON data parsed by `data.json()` call
-
+                    groupChildren();
                 });
+        }
 
+        const groupChildren = () => {
+            let children = [];
+            let groupOfChildren = [];
+
+            this.state.response.monthlyInvestmentResponses.forEach((data, index) => {
+                let childRow =
+                    <tr key={index}>
+                        <td>{data.date}</td>
+                        <td>{data.stockIncrease}%</td>
+                        <td><NumberFormat value={data.totalInvested} displayType={'text'} thousandSeparator={true}
+                                          prefix={'£'}/></td>
+                        <td><NumberFormat value={data.balance} displayType={'text'} thousandSeparator={true}
+                                          prefix={'£'}/></td>
+                        <td><NumberFormat value={data.profit} displayType={'text'} thousandSeparator={true}
+                                          prefix={'£'}/></td>
+                    </tr>
+
+                children.push(childRow);
+
+                if ((index !== 0 && (index + 1) % 12 === 0) || this.state.response.monthlyInvestmentResponses.length - 1 === index) {
+                    groupOfChildren.push(children);
+                    children = [];
+                }
+            });
+
+            return groupOfChildren;
         }
 
         return (
@@ -152,19 +201,44 @@ export default class StocksCalculator extends React.Component {
                                     <th>Profit</th>
                                 </tr>
                                 </thead>
-                                <tbody>
-                                {this.state.response.map(( data, index ) => {
-                                    return (
-                                        <tr key={index}>
-                                            <td>{data.date}</td>
-                                            <td>{data.stockIncrease}%</td>
-                                            <td><NumberFormat value={data.totalInvested} displayType={'text'} thousandSeparator={true} prefix={'£'} /></td>
-                                            <td><NumberFormat value={data.balance} displayType={'text'} thousandSeparator={true} prefix={'£'} /></td>
-                                            <td><NumberFormat value={data.profit} displayType={'text'} thousandSeparator={true} prefix={'£'} /></td>
-                                        </tr>
-                                    );
-                                })}
-                                </tbody>
+                                {
+                                    groupChildren().map((childGroup, index) => {
+                                        return (
+                                            <>
+                                                <tbody>
+
+                                                <tr className="year-row"
+                                                    onClick={() => {
+                                                    this.toggleAccordion(index);
+                                                }}
+                                                    aria-controls={`collapse-row-${index}`}
+                                                    aria-expanded={this.state.accordion[index]}
+                                                >
+                                                    <td>
+                                                        Year {index + 1}
+                                                    </td>
+                                                    <td>
+                                                        {this.state.response.yearlyInvestmentResponses[index].stockIncrease}%
+                                                    </td>
+                                                    <td>
+                                                        £{this.state.response.yearlyInvestmentResponses[index].totalInvested}
+                                                    </td>
+                                                    <td>
+                                                        £ {this.state.response.yearlyInvestmentResponses[index].endBalance}
+                                                    </td>
+                                                    <td>
+                                                        £ {this.state.response.yearlyInvestmentResponses[index].totalProfit}
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                                <Collapse in={this.state.accordion[index]}>
+                                                    <tbody id={`collapse-row-${index}`} className="generated-cells">
+                                                    {childGroup}
+                                                    </tbody>
+                                                </Collapse>
+                                            </>
+                                        );
+                                    })}
                             </Table>
                         </Col>
                     </Row>
