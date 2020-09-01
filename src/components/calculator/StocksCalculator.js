@@ -8,7 +8,7 @@ import FormControl from "react-bootstrap/FormControl";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import Http from "../../js/http/http";
-import {LOCALHOST} from "../../js/constants/url_constants";
+import {API_URL, LOCALHOST} from "../../js/constants/url_constants";
 import Table from "react-bootstrap/Table";
 import NumberFormat from 'react-number-format';
 import Collapse from "react-bootstrap/Collapse";
@@ -61,7 +61,7 @@ export default class StocksCalculator extends React.Component {
             let startDate = this.startDate.current.value;
             let endDate = this.endDate.current.value;
             let initialBalance = this.initialBalance.current.value;
-            Http.getData(`http://${LOCALHOST}:8080/api/v1/investment/yearly/summary?stockType=${stock}&startDate=${startDate}&endDate=${endDate}&monthlyInvestment=${monthlyInvestment}&initialInvestment=${initialBalance}`)
+            Http.getData(`http://${API_URL}:8080/api/v1/investment/yearly/summary?stockType=${stock}&startDate=${startDate}&endDate=${endDate}&monthlyInvestment=${monthlyInvestment}&initialInvestment=${initialBalance}`)
                 .then(data => {
                     this.setState({
                         isLoaded: true,
